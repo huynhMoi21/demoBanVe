@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WonderLand - Hệ Thống Bán Vé Khu Vui Chơi</title>
+  <meta name="description" content="Hệ thống bán vé khu vui chơi giải trí cao cấp, kiểm soát tồn kho tức thời và an toàn bảo mật.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-decorations">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">🎡</div>
+        <div class="brand-text">
+          <h1>WONDERLAND THEME PARK</h1>
+          <p class="subtitle">Hệ Thống Bán Vé Trực Tuyến & Quản Lý Tồn Kho</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-reset-data" class="btn-ghost" title="Khôi phục lại số lượng vé ban đầu">
+          <span class="icon">🔄</span> Khôi phục dữ liệu gốc
+        </button>
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span id="backend-status-text">Đang kết nối BE...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <span class="badge-tag">⚡ CÔNG NGHỆ: NODE.JS + TYPESCRIPT + SQLITE</span>
+        <h2>Trải Nghiệm Đặt Vé Khu Vui Chơi Đỉnh Cao</h2>
+        <!-- <p>Tính toán tổng tiền bảo mật 100% trên Backend, kiểm soát tồn kho chống âm với Transaction ACID.</p> -->
+      </div>
+    </section>
+
+    <!-- SECTION: DANH SÁCH VÉ & TỒN KHO -->
+    <section class="section-container">
+      <div class="section-header">
+        <div class="title-wrap">
+          <span class="section-subtitle">DANH MỤC DỊCH VỤ</span>
+          <h3>Bảng Vé & Tồn Kho Hiện Tại</h3>
+        </div>
+        <button id="btn-refresh-tickets" class="btn-sm">
+          <span>⚡ Cập nhật tồn kho</span>
+        </button>
+      </div>
+
+      <div id="tickets-grid" class="tickets-grid">
+        <!-- Render danh sách vé qua JS -->
+        <div class="loading-spinner">Đang tải danh sách vé...</div>
+      </div>
+    </section>
+
+    <!-- SECTION: KHU VỰC THỬ NGHIỆM ĐẶT VÉ & VALIDATION API -->
+    <section class="section-container">
+      <div class="split-grid">
+        <!-- FORM ĐẶT VÉ -->
+        <div class="card booking-card">
+          <div class="card-header">
+            <h4>🎟️ Đặt Vé Trực Tuyến</h4>
+            <span class="card-desc">Gửi yêu cầu tới <code>POST /api/bookings</code></span>
+          </div>
+
+          <form id="booking-form" class="booking-form" onsubmit="return false;">
+            <div class="form-group">
+              <label for="select-ticket">Chọn loại vé <span class="required">*</span></label>
+              <select id="select-ticket" class="form-control" required>
+                <option value="">-- Vui lòng chọn loại vé --</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="input-ticket-id">ticketId gửi lên BE</label>
+                <input type="text" id="input-ticket-id" class="form-control" placeholder="1 hoặc 2" required>
+              </div>
+
+              <div class="form-group flex-1">
+                <label for="input-quantity">Số lượng (quantity) <span class="required">*</span></label>
+                <div class="stepper-wrap">
+                  <button type="button" class="btn-stepper" id="btn-qty-minus">-</button>
+                  <input type="number" id="input-quantity" class="form-control text-center" value="1" min="-10" max="999">
+                  <button type="button" class="btn-stepper" id="btn-qty-plus">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="price-summary-box">
+              <div class="summary-row">
+                <span>Đơn giá niêm yết (BE):</span>
+                <strong id="display-unit-price">0 đ</strong>
+              </div>
+              <div class="summary-row">
+                <span>Tồn kho khả dụng:</span>
+                <span id="display-stock-status" class="stock-badge">--</span>
+              </div>
+              <div class="summary-row">
+                <span>Tổng đơn hàng (totalAmount):</span>
+                <span id="display-total-raw">0 đ</span>
+              </div>
+              <div class="summary-row discount-row">
+                <span>Ưu đãi (Giảm 10%, tối đa 200k):</span>
+                <span id="display-discount-estimate" class="text-discount">- 0 đ</span>
+              </div>
+              <div class="summary-row total-row">
+                <span>Số tiền thanh toán (finalAmount):</span>
+                <span id="display-total-estimate" class="highlight-total">0 đ</span>
+              </div>
+              <p class="security-note">🔒 <em>Chính sách: Đơn từ 1.000.000đ trở lên giảm 10% (tối đa 200.000đ). Backend tự động tính và áp dụng.</em></p>
+            </div>
+
+            <button type="button" id="btn-submit-booking" class="btn-primary btn-block">
+              <span class="btn-text">Xác Nhận Đặt Vé</span>
+              <span class="btn-icon">➔</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- KẾT QUẢ PHẢN HỒI API (RESPONSE VIEWER) -->
+        <div class="card response-card">
+          <div class="card-header">
+            <h4>📡 Phản Hồi Từ Backend (API Response)</h4>
+            <span id="response-status-badge" class="badge-status idle">SẴN SÀNG</span>
+          </div>
+
+          <div id="booking-alert-box" class="alert-box hidden">
+            <!-- Hiển thị thông báo kết quả thân thiện -->
+          </div>
+
+          <div class="code-viewer-wrap">
+            <div class="code-viewer-header">
+              <span>POST /api/bookings</span>
+              <span id="response-http-code">HTTP ---</span>
+            </div>
+            <pre id="json-response-code" class="code-block"><code>// Kết quả phản hồi từ API sẽ hiển thị tại đây khi bạn gửi yêu cầu đặt vé...</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: LỊCH SỬ ĐƠN ĐÃ ĐẶT -->
+    <section class="section-container">
+      <div class="section-header">
+        <div class="title-wrap">
+          <span class="section-subtitle">DANH SÁCH GIAO DỊCH</span>
+          <h3>Đơn Hàng Đã Tạo Thành Công</h3>
+        </div>
+        <button id="btn-refresh-bookings" class="btn-sm">
+          <span>🔄 Làm mới đơn hàng</span>
+        </button>
+      </div>
+
+      <div class="card table-card">
+        <div class="table-responsive">
+          <table class="data-table" id="bookings-table">
+            <thead>
+              <tr>
+                <th>Mã Đơn (bookingId)</th>
+                <th>Tên Vé</th>
+                <th>Đơn Giá</th>
+                <th>SL</th>
+                <th>Tổng Tiền</th>
+                <th>Giảm Giá</th>
+                <th>Thực Thu (finalAmount)</th>
+                <th>Trạng Thái</th>
+                <th>Thời Gian</th>
+              </tr>
+            </thead>
+            <tbody id="bookings-table-body">
+              <tr>
+                <td colspan="9" class="text-center text-muted">Chưa có đơn đặt nào. Hãy đặt vé để xem đơn hàng được tạo!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>© 2026 Wonderland Amusement Park System. Xây dựng hoàn chỉnh với Node.js, TypeScript, SQLite & RESTful API.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
